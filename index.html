@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot Builder</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-gray-100">
+    <div id="app" class="container mx-auto p-4">
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <h1 class="text-3xl font-bold mb-6 text-center text-blue-600">Chatbot Builder</h1>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <h2 class="text-xl font-semibold mb-4">Configure Your Chatbot</h2>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Chatbot Name</label>
+                            <input type="text" v-model="botConfig.name" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Welcome Message</label>
+                            <input type="text" v-model="botConfig.welcomeMessage" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Theme Color</label>
+                            <input type="color" v-model="botConfig.themeColor" class="mt-1 block w-full">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Responses</label>
+                            <div v-for="(response, index) in botConfig.responses" :key="index" class="flex gap-2 mt-2">
+                                <input type="text" v-model="response.trigger" placeholder="Trigger" class="flex-1 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                <input type="text" v-model="response.reply" placeholder="Reply" class="flex-1 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                <button @click="removeResponse(index)" class="text-red-500 hover:text-red-700">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                            <button @click="addResponse" class="mt-2 text-blue-500 hover:text-blue-700">
+                                <i class="fas fa-plus"></i> Add Response
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <h2 class="text-xl font-semibold mb-4">Preview</h2>
+                    <div class="border rounded-lg h-96 relative bg-white">
+                        <div class="bg-gray-200 p-3 rounded-t-lg" :style="{ backgroundColor: botConfig.themeColor }">
+                            <h3 class="text-white font-semibold">{{ botConfig.name || 'My Chatbot' }}</h3>
+                        </div>
+                        <div class="p-4 h-72 overflow-y-auto">
+                            <div class="mb-4">
+                                <div class="bg-gray-200 rounded-lg p-2 inline-block">
+                                    {{ botConfig.welcomeMessage || 'Welcome! How can I help you?' }}
+                                </div>
+                            </div>
+                            <div v-for="(msg, index) in chatMessages" :key="index" :class="msg.type === 'user' ? 'text-right' : ''">
+                                <div :class="msg.type === 'user' ? 'bg-blue-500 text-white' : 'bg-gray-200'" class="rounded-lg p-2 inline-block mb-2">
+                                    {{ msg.text }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="absolute bottom-0 w-full p-3 border-t">
+                            <div class="flex gap-2">
+                                <input type="text" v-model="userInput" @keyup.enter="sendMessage" placeholder="Type a message..." class="flex-1 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                <button @click="sendMessage" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">
+                                    <i class="fas fa-paper-plane"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+
+        createApp({
+            data() {
+                return {
+                    botConfig: {
+                        name: '',
+                        welcomeMessage: '',
+                        themeColor: '#2563eb',
+                        responses: [
+                            { trigger: '', reply: '' }
+                        ]
+                    },
+                    chatMessages: [],
+                    userInput: ''
+                }
+            },
+            methods: {
+                addResponse() {
+                    this.botConfig.responses.push({ trigger: '', reply: '' });
+                },
+                removeResponse(index) {
+                    this.botConfig.responses.splice(index, 1);
+                },
+                sendMessage() {
+                    if (!this.userInput.trim()) return;
+
+                    this.chatMessages.push({
+                        type: 'user',
+                        text: this.userInput
+                    });
+
+                    const response = this.findResponse(this.userInput);
+                    setTimeout(() => {
+                        this.chatMessages.push({
+                            type: 'bot',
+                            text: response
+                        });
+                    }, 500);
+
+                    this.userInput = '';
+                },
+                findResponse(input) {
+                    const matchedResponse = this.botConfig.responses.find(r => 
+                        input.toLowerCase().includes(r.trigger.toLowerCase()) && r.trigger !== ''
+                    );
+                    return matchedResponse ? matchedResponse.reply : "I'm not sure how to respond to that.";
+                }
+            }
+        }).mount('#app')
+    </script>
+</body>
+</html>
